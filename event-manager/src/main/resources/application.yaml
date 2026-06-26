@@ -6,7 +6,7 @@ spring:
     name: event-manager
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/event_manager
+    url: jdbc:postgresql://localhost:5435/event_manager
     username: postgres
     password: postgres
 
@@ -17,7 +17,7 @@ spring:
     show-sql: true
 
   liquibase:
-    enabled: true
+    enabled: false
     change-log: classpath:/db/changelog/changelog-master.yaml
 
 logging:
@@ -28,3 +28,4 @@ logging:
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
+    url: /event-manager-openapi.yaml

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/DDL/create-location-table.yaml
+  - changeSet:
+      id: 'create-location-table'
+      author: Bychkova Elena
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-location-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-location-table.rollback.sql
+            relativeToChangelogFile: true

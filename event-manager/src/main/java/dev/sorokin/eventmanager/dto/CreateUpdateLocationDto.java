@@ -1,12 +1,13 @@
 package dev.sorokin.eventmanager.dto;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public class CreateUpdateLocationDto {
-    @NotNull
+    @NotBlank
     private String name;
-    @NotNull
+    @NotBlank
     private String address;
     private String description;
     @NotNull

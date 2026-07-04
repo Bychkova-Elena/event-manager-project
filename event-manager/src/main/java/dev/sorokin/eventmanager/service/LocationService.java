@@ -50,9 +50,12 @@ public class LocationService {
             int capacity,
             String description
     ) {
-        locationRepository.findById(locationId).orElseThrow();
+        LocationEntity location = locationRepository.findById(locationId).orElseThrow();
+        location.setName(name);
+        location.setAddress(address);
+        location.setCapacity(capacity);
+        location.setDescription(description);
 
-        LocationEntity location = new LocationEntity(locationId, name, address, description, capacity);
         LocationEntity updatedLocation = locationRepository.save(location);
 
         return locationMapper.mapLocationEntityToLocation(updatedLocation);

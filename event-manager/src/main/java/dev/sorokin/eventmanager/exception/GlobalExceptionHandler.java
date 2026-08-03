@@ -39,6 +39,22 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorMessageResponse> handleIllegalArgumentException(
+            IllegalArgumentException exception
+    ) {
+
+        ErrorMessageResponse response = new ErrorMessageResponse(
+                "Некорректный запрос",
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorMessageResponse> handleNoSuchElementException(
             NoSuchElementException exception

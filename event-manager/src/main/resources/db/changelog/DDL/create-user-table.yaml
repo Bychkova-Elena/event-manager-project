@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/DDL/create-user-table.yaml
+  - changeSet:
+      id: 'create-user-table'
+      author: Bychkova Elena
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-user-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-user-table.rollback.sql
+            relativeToChangelogFile: true

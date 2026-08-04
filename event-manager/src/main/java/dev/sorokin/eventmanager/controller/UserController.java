@@ -1,5 +1,7 @@
 package dev.sorokin.eventmanager.controller;
 
+import dev.sorokin.eventmanager.dto.AuthRequestDto;
+import dev.sorokin.eventmanager.dto.AuthResponseDto;
 import dev.sorokin.eventmanager.dto.RegisterResponseDto;
 import dev.sorokin.eventmanager.dto.RegisterUserRequestDto;
 import dev.sorokin.eventmanager.mapper.UserMapper;
@@ -33,5 +35,13 @@ public class UserController {
         RegisterResponseDto response = userMapper.mapFromUserToDto(user);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/auth")
+    public ResponseEntity<AuthResponseDto> auth(@Valid @RequestBody AuthRequestDto dto) {
+        String token = userService.authenticateUser(dto.getLogin(), dto.getPassword());
+
+        return ResponseEntity.status(HttpStatus.OK).body(new AuthResponseDto(token));
+
     }
 }

@@ -4,8 +4,12 @@ import dev.sorokin.eventmanager.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    public boolean existsByLogin(String login);
+    boolean existsByLogin(String login);
+
+    Optional<UserEntity> findByLogin(String login);
 }

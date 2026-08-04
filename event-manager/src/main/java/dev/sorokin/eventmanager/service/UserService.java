@@ -4,6 +4,10 @@ import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.mapper.UserMapper;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.repository.UserRepository;
+import dev.sorokin.eventmanager.security.jwt.JwtTokenManager;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -11,10 +15,22 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenManager jwtTokenManager;
+    private final AuthenticationManager authenticationManager;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserService(
+            UserRepository userRepository,
+            UserMapper userMapper,
+            PasswordEncoder passwordEncoder,
+            JwtTokenManager jwtTokenManager,
+            AuthenticationManager authenticationManager
+    ) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenManager = jwtTokenManager;
+        this.authenticationManager = authenticationManager;
     }
 
     public User createUser(User userToCreate) {
@@ -23,11 +39,21 @@ public class UserService {
             throw new IllegalArgumentException("Пользователь с таким логином уже существует");
         }
 
-        //TODO: закешировать пароль
         UserEntity userEntity = userMapper.mapDomainToEntity(userToCreate);
+
+        String encodedPassword = passwordEncoder.encode(userToCreate.password());
+        userEntity.setPassword(encodedPassword);
 
         UserEntity createdUser = userRepository.save(userEntity);
 
         return userMapper.mapEntityToDomain(createdUser);
+    }
+
+    public String authenticateUser(String login, String password) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(login, password)
+        );
+
+        return jwtTokenManager.generateJwtToken(login);
     }
 }

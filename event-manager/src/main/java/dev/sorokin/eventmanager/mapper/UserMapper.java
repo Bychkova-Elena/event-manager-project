@@ -2,6 +2,7 @@ package dev.sorokin.eventmanager.mapper;
 
 import dev.sorokin.eventmanager.dto.RegisterResponseDto;
 import dev.sorokin.eventmanager.dto.RegisterUserRequestDto;
+import dev.sorokin.eventmanager.dto.UserByIdResponseDto;
 import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.UserRole;
 import dev.sorokin.eventmanager.model.User;
@@ -46,6 +47,15 @@ public class UserMapper {
                 entity.getPassword(),
                 entity.getAge(),
                 entity.getRole()
+        );
+    }
+
+    public UserByIdResponseDto mapDomainToUserByIdResponseDto(User user) {
+        return new UserByIdResponseDto(
+                user.id(),
+                user.login(),
+                user.age(),
+                user.role()
         );
     }
 }

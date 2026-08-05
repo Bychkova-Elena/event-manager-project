@@ -1,19 +1,13 @@
 package dev.sorokin.eventmanager.controller;
 
-import dev.sorokin.eventmanager.dto.AuthRequestDto;
-import dev.sorokin.eventmanager.dto.AuthResponseDto;
-import dev.sorokin.eventmanager.dto.RegisterResponseDto;
-import dev.sorokin.eventmanager.dto.RegisterUserRequestDto;
+import dev.sorokin.eventmanager.dto.*;
 import dev.sorokin.eventmanager.mapper.UserMapper;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")
@@ -43,5 +37,14 @@ public class UserController {
 
         return ResponseEntity.status(HttpStatus.OK).body(new AuthResponseDto(token));
 
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserByIdResponseDto> getUserById(@PathVariable("userId") Long userId) {
+        User userById = userService.findUserById(userId);
+
+        UserByIdResponseDto userDto = userMapper.mapDomainToUserByIdResponseDto(userById);
+
+        return ResponseEntity.status(HttpStatus.OK).body(userDto);
     }
 }

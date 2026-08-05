@@ -56,4 +56,10 @@ public class UserService {
 
         return jwtTokenManager.generateJwtToken(login);
     }
+
+    public User findUserById(Long userId) {
+        UserEntity userEntity = userRepository.findById(userId).orElseThrow();
+
+        return userMapper.mapEntityToDomain(userEntity);
+    }
 }

@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: DDL/create-location-table.yaml
       relativeToChangelogFile: true
+  - include:
+      file: DDL/create-user-table.yaml
+      relativeToChangelogFile: true

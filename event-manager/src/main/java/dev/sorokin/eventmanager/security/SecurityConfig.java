@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -35,6 +36,27 @@ public class SecurityConfig {
 
     @Autowired
     private JwtFilterChain jwtFilterChain;
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.debug(true).ignoring()
+                .requestMatchers("/css/**",
+                        "/js/**",
+                        "/img/**",
+                        "/lib/**",
+                        "/favicon.ico",
+                        "/swagger-ui/**",
+                        "/v2/api-docs",
+                        "/v3/api-docs",
+                        "/configuration/ui",
+                        "/swagger-resources/**",
+                        "/configuration/security",
+                        "/swagger-ui.html",
+                        "/webjars/**",
+                        "/v3/api-docs/swagger-config",
+                        "/event-manager-openapi.yaml"
+                );
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

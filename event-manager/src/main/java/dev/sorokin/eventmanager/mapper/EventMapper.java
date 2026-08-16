@@ -1,0 +1,72 @@
+package dev.sorokin.eventmanager.mapper;
+
+import dev.sorokin.eventmanager.dto.EventCreateRequestDto;
+import dev.sorokin.eventmanager.dto.EventCreateResponseDto;
+import dev.sorokin.eventmanager.entity.EventEntity;
+import dev.sorokin.eventmanager.enums.EventStatus;
+import dev.sorokin.eventmanager.model.Event;
+import org.springframework.stereotype.Component;
+
+@Component
+public class EventMapper {
+
+    public Event mapFromCreateRequestDtoToEventModel(EventCreateRequestDto dto) {
+        return new Event(
+                0,
+                dto.getDate(),
+                dto.getDuration(),
+                dto.getCost(),
+                dto.getMaxPlaces(),
+                dto.getLocationId(),
+                dto.getName(),
+                null,
+                null,
+                EventStatus.WAIT_START.name()
+        );
+    }
+
+    public EventCreateResponseDto mapFromEventModelToCreateResponseDto(Event event) {
+        return new EventCreateResponseDto(
+                event.occupiedPlaces(),
+                event.date(),
+                event.duration(),
+                event.cost(),
+                event.maxPlaces(),
+                event.locationId(),
+                event.name(),
+                event.id(),
+                event.ownerId(),
+                event.status()
+        );
+    }
+
+    public EventEntity mapFromEventModelToEventEntity(Event event) {
+        return new EventEntity(
+                event.id(),
+                event.name(),
+                event.maxPlaces(),
+                event.date(),
+                event.cost(),
+                event.duration(),
+                null,
+                null,
+                event.occupiedPlaces(),
+                event.status()
+        );
+    }
+
+    public Event mapFromEventEntityToEventModel(EventEntity entity) {
+        return new Event(
+                entity.getOccupiedPlaces(),
+                entity.getDate(),
+                entity.getDuration(),
+                entity.getCost(),
+                entity.getMaxPlaces(),
+                entity.getLocation().getId(),
+                entity.getName(),
+                entity.getId(),
+                entity.getOwner().getId(),
+                entity.getStatus()
+        );
+    }
+}

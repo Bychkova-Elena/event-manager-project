@@ -2,6 +2,9 @@ package dev.sorokin.eventmanager.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "location")
 public class LocationEntity {
@@ -21,6 +24,9 @@ public class LocationEntity {
 
     @Column(name = "capacity")
     private int capacity;
+
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<EventEntity> events = new ArrayList<>();
 
     public LocationEntity(String name, String address, String description, int capacity) {
         this.name = name;
@@ -78,5 +84,13 @@ public class LocationEntity {
 
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+
+    public List<EventEntity> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<EventEntity> events) {
+        this.events = events;
     }
 }

@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: DDL/create-user-table.yaml
       relativeToChangelogFile: true
+  - include:
+      file: DDL/create-event-table.yaml
+      relativeToChangelogFile: true

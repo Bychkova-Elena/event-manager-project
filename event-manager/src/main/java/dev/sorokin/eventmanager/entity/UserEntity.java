@@ -3,6 +3,9 @@ package dev.sorokin.eventmanager.entity;
 import dev.sorokin.eventmanager.enums.UserRole;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "\"user\"")
 public class UserEntity {
@@ -22,6 +25,9 @@ public class UserEntity {
 
     @Column(name = "role")
     private String role;
+
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<EventEntity> events = new ArrayList<>();
 
     private static final Integer DEFAULT_AGE = 18;
 
@@ -88,5 +94,13 @@ public class UserEntity {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public List<EventEntity> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<EventEntity> events) {
+        this.events = events;
     }
 }

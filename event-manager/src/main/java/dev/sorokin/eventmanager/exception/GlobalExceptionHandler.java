@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorMessageResponse> handleIllegalArgumentException(
             IllegalArgumentException exception
+    ) {
+
+        ErrorMessageResponse response = new ErrorMessageResponse(
+                "Некорректный запрос",
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<ErrorMessageResponse> handleDateTimeParseException(
+            DateTimeParseException exception
     ) {
 
         ErrorMessageResponse response = new ErrorMessageResponse(

@@ -8,10 +8,7 @@ import dev.sorokin.eventmanager.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/events")
@@ -31,5 +28,12 @@ public class EventController {
 
         EventCreateResponseDto response = eventMapper.mapFromEventModelToCreateResponseDto(event);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<Void> deleteEventById(@PathVariable("eventId") Long eventId) {
+        eventService.cancelEventById(eventId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

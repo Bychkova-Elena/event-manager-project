@@ -7,6 +7,7 @@ import dev.sorokin.eventmanager.repository.UserRepository;
 import dev.sorokin.eventmanager.security.jwt.JwtTokenManager;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -61,5 +62,16 @@ public class UserService {
         UserEntity userEntity = userRepository.findById(userId).orElseThrow();
 
         return userMapper.mapEntityToDomain(userEntity);
+    }
+
+    public User getCurrentUser() {
+        UserEntity currentUser;
+        try {
+            currentUser = (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return userMapper.mapEntityToDomain(currentUser);
     }
 }

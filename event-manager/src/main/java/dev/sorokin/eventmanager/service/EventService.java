@@ -53,7 +53,10 @@ public class EventService {
 
         LocationEntity location = locationRepository
                 .findById(event.locationId())
-                .orElseThrow(() -> new NoSuchElementException(String.format("Локация %s не найдена", event.locationId())));
+                .orElseThrow(() -> {
+                    logger.error("Not found location with id: {}", event.locationId());
+                    return new NoSuchElementException(String.format("Локация %s не найдена", event.locationId()));
+                });
         User currentUser = userService.getCurrentUser();
 
         validateEventToCreate(event, location);
@@ -74,18 +77,37 @@ public class EventService {
 
         logger.info("Start cancel event: {}", eventId);
 
-        EventEntity event = eventRepository
-                .findById(eventId)
-                .orElseThrow(() -> new NoSuchElementException(String.format("Мероприятие %s не найдено", eventId)));
+        Event event = getEventByIdFromRepository(eventId);
 
         User currentUser = userService.getCurrentUser();
 
         validateEventToCancel(event, currentUser);
 
-        event.setStatus(EventStatus.CANCELLED.name());
-        eventRepository.save(event);
+        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event);
+        entity.setStatus(EventStatus.CANCELLED.name());
+        eventRepository.save(entity);
 
         logger.info("Successfully canceled event: {}", eventId);
+    }
+
+    public Event findEventById(Long eventId) {
+
+        logger.info("Start find event with id: {}", eventId);
+        Event event = getEventByIdFromRepository(eventId);
+        logger.info("Successfully find event: {}", event);
+
+        return event;
+    }
+
+    private Event getEventByIdFromRepository(Long eventId) {
+        EventEntity entity = eventRepository
+                .findById(eventId)
+                .orElseThrow(() -> {
+                    logger.error("Not found event with id: {}", eventId);
+                    return new NoSuchElementException(String.format("Мероприятие %s не найдено", eventId));
+                });
+
+        return eventMapper.mapFromEventEntityToEventModel(entity);
     }
 
     private void validateEventToCreate(Event newEvent, LocationEntity location) {
@@ -102,16 +124,16 @@ public class EventService {
         }
     }
 
-    private void validateEventToCancel(EventEntity event, User currentUser) {
+    private void validateEventToCancel(Event event, User currentUser) {
         if (Objects.equals(currentUser.role(), UserRole.USER.name())
-                && !Objects.equals(currentUser.id(), event.getOwner().getId())) {
+                && !Objects.equals(currentUser.id(), event.ownerId())) {
 
             logger.error("Current user {} not ADMIN and not owner the event {}", currentUser, event);
             throw new AccessDeniedException("Текущий пользователь не является админом или оунером мероприятия");
         }
 
-        if (!Objects.equals(event.getStatus(), EventStatus.WAIT_START.name())) {
-            logger.error("Event has not status WAIT_START, event's status is {}", event.getStatus());
+        if (!Objects.equals(event.status(), EventStatus.WAIT_START.name())) {
+            logger.error("Event has not status WAIT_START, event's status is {}", event.status());
             throw new IllegalArgumentException("Мероприятие не в статусе WAIT_START");
         }
     }

@@ -1,7 +1,7 @@
 package dev.sorokin.eventmanager.mapper;
 
 import dev.sorokin.eventmanager.dto.EventCreateRequestDto;
-import dev.sorokin.eventmanager.dto.EventCreateResponseDto;
+import dev.sorokin.eventmanager.dto.EventResponseDto;
 import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import dev.sorokin.eventmanager.model.Event;
@@ -25,8 +25,8 @@ public class EventMapper {
         );
     }
 
-    public EventCreateResponseDto mapFromEventModelToCreateResponseDto(Event event) {
-        return new EventCreateResponseDto(
+    public EventResponseDto mapFromEventModelToResponseDto(Event event) {
+        return new EventResponseDto(
                 event.occupiedPlaces(),
                 event.date(),
                 event.duration(),

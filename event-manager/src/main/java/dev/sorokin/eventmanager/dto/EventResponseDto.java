@@ -1,6 +1,6 @@
 package dev.sorokin.eventmanager.dto;
 
-public record EventCreateResponseDto (
+public record EventResponseDto(
         int occupiedPlaces,
         String date,
         int duration,

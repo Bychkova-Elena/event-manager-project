@@ -1,6 +1,6 @@
 package dev.sorokin.eventmanager.mapper;
 
-import dev.sorokin.eventmanager.dto.EventCreateRequestDto;
+import dev.sorokin.eventmanager.dto.EventCreateUpdateRequestDto;
 import dev.sorokin.eventmanager.dto.EventResponseDto;
 import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventMapper {
 
-    public Event mapFromCreateRequestDtoToEventModel(EventCreateRequestDto dto) {
+    public Event mapFromCreateUpdateRequestDtoToEventModel(EventCreateUpdateRequestDto dto) {
         return new Event(
                 0,
                 dto.getDate(),

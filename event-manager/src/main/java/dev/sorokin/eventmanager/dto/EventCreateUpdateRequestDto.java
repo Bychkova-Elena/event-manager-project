@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
-public class EventCreateRequestDto {
+public class EventCreateUpdateRequestDto {
 
     @NotBlank
     private String name;

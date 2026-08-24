@@ -6,11 +6,12 @@ import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import dev.sorokin.eventmanager.enums.UserRole;
 import dev.sorokin.eventmanager.mapper.EventMapper;
+import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.mapper.UserMapper;
 import dev.sorokin.eventmanager.model.Event;
+import dev.sorokin.eventmanager.model.Location;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.repository.EventRepository;
-import dev.sorokin.eventmanager.repository.LocationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -25,25 +26,28 @@ import java.util.Objects;
 public class EventService {
 
     private final EventRepository eventRepository;
-    private final LocationRepository locationRepository;
+    private final LocationService locationService;
     private final EventMapper eventMapper;
     private final UserService userService;
     private final UserMapper userMapper;
+    private final LocationMapper locationMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     public EventService(
             EventRepository eventRepository,
-            LocationRepository locationRepository,
+            LocationService locationService,
             EventMapper eventMapper,
             UserService userService,
-            UserMapper userMapper
+            UserMapper userMapper,
+            LocationMapper locationMapper
     ) {
         this.eventRepository = eventRepository;
-        this.locationRepository = locationRepository;
+        this.locationService = locationService;
         this.eventMapper = eventMapper;
         this.userService = userService;
         this.userMapper = userMapper;
+        this.locationMapper = locationMapper;
     }
 
     @Transactional
@@ -51,24 +55,21 @@ public class EventService {
 
         logger.info("Start create event: {}", event);
 
-        LocationEntity location = locationRepository
-                .findById(event.locationId())
-                .orElseThrow(() -> {
-                    logger.error("Not found location with id: {}", event.locationId());
-                    return new NoSuchElementException(String.format("Локация %s не найдена", event.locationId()));
-                });
+        Location location = locationService.findLocationById(event.locationId());
+
         User currentUser = userService.getCurrentUser();
 
-        validateEventToCreate(event, location);
+        validateEventToCreateUpdate(event, location);
 
         UserEntity currentUserEntity = userMapper.mapDomainToEntity(currentUser);
         EventEntity eventToSave = eventMapper.mapFromEventModelToEventEntity(event);
-        eventToSave.setLocation(location);
+        LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(location);
+        eventToSave.setLocation(locationEntity);
         eventToSave.setOwner(currentUserEntity);
 
         EventEntity saved = eventRepository.save(eventToSave);
 
-        logger.info("Successfully saved event: {}", eventToSave);
+        logger.info("Successfully saved event: {}", saved);
         return eventMapper.mapFromEventEntityToEventModel(saved);
     }
 
@@ -99,6 +100,41 @@ public class EventService {
         return event;
     }
 
+    @Transactional
+    public Event updateEventById(Long eventId, Event eventToUpdate) {
+
+        logger.info("Start update event with id: {}", eventId);
+
+        Event event = getEventByIdFromRepository(eventId);
+        User currentUser = userService.getCurrentUser();
+
+        validateCurrentUserIsOwnerOrAdmin(event, currentUser);
+
+        Location location = locationService.findLocationById(event.locationId());
+
+        if (event.occupiedPlaces() > eventToUpdate.maxPlaces()) {
+            logger.error("OccupiedPlaces {} bigger than new event's maxPlaces {}", event.occupiedPlaces(), eventToUpdate.maxPlaces());
+            throw new IllegalArgumentException("Занятых мест - " + event.occupiedPlaces() + " - больше максимального количества мест на мероприятии - " + eventToUpdate.maxPlaces());
+        }
+
+        validateEventToCreateUpdate(eventToUpdate, location);
+
+        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event);
+        LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(location);
+
+        entity.setName(eventToUpdate.name());
+        entity.setMaxPlaces(eventToUpdate.maxPlaces());
+        entity.setDate(eventToUpdate.date());
+        entity.setCost(eventToUpdate.cost());
+        entity.setDuration(eventToUpdate.duration());
+        entity.setLocation(locationEntity);
+
+        EventEntity saved = eventRepository.save(entity);
+        logger.info("Successfully updated event: {}", saved);
+
+        return eventMapper.mapFromEventEntityToEventModel(saved);
+    }
+
     private Event getEventByIdFromRepository(Long eventId) {
         EventEntity entity = eventRepository
                 .findById(eventId)
@@ -110,10 +146,19 @@ public class EventService {
         return eventMapper.mapFromEventEntityToEventModel(entity);
     }
 
-    private void validateEventToCreate(Event newEvent, LocationEntity location) {
-        if (newEvent.maxPlaces() > location.getCapacity()) {
-            logger.error("MaxPlaces {} bigger than location's capacity {}", newEvent.maxPlaces(), location.getCapacity());
-            throw new IllegalArgumentException("Вместимость локации - " + location.getCapacity() + " меньше максимального количества мест на мероприятии - " + newEvent.maxPlaces());
+    private void validateCurrentUserIsOwnerOrAdmin(Event event, User currentUser) {
+        if (Objects.equals(currentUser.role(), UserRole.USER.name())
+                && !Objects.equals(currentUser.id(), event.ownerId())) {
+
+            logger.error("Current user {} not ADMIN and not owner the event {}", currentUser, event);
+            throw new AccessDeniedException("Текущий пользователь не является админом или оунером мероприятия");
+        }
+    }
+
+    private void validateEventToCreateUpdate(Event newEvent, Location location) {
+        if (newEvent.maxPlaces() > location.capacity()) {
+            logger.error("MaxPlaces {} bigger than location's capacity {}", newEvent.maxPlaces(), location.capacity());
+            throw new IllegalArgumentException("Вместимость локации - " + location.capacity() + " меньше максимального количества мест на мероприятии - " + newEvent.maxPlaces());
         }
 
         Instant eventInstant = Instant.parse(newEvent.date());
@@ -125,12 +170,7 @@ public class EventService {
     }
 
     private void validateEventToCancel(Event event, User currentUser) {
-        if (Objects.equals(currentUser.role(), UserRole.USER.name())
-                && !Objects.equals(currentUser.id(), event.ownerId())) {
-
-            logger.error("Current user {} not ADMIN and not owner the event {}", currentUser, event);
-            throw new AccessDeniedException("Текущий пользователь не является админом или оунером мероприятия");
-        }
+        validateCurrentUserIsOwnerOrAdmin(event, currentUser);
 
         if (!Objects.equals(event.status(), EventStatus.WAIT_START.name())) {
             logger.error("Event has not status WAIT_START, event's status is {}", event.status());

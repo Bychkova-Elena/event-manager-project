@@ -31,6 +31,16 @@ public class LocationMapper {
         );
     }
 
+    public LocationEntity mapLocationModelToLocationEntity(Location location) {
+        return new LocationEntity(
+                location.id(),
+                location.name(),
+                location.address(),
+                location.description(),
+                location.capacity()
+        );
+    }
+
     public List<LocationResponseDto> mapLocationListToLocationResponseDtoList(List<Location> locationList) {
         List<LocationResponseDto> locationsDto = new ArrayList<>();
 

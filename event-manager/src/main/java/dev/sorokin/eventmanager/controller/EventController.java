@@ -1,6 +1,6 @@
 package dev.sorokin.eventmanager.controller;
 
-import dev.sorokin.eventmanager.dto.EventCreateRequestDto;
+import dev.sorokin.eventmanager.dto.EventCreateUpdateRequestDto;
 import dev.sorokin.eventmanager.dto.EventResponseDto;
 import dev.sorokin.eventmanager.mapper.EventMapper;
 import dev.sorokin.eventmanager.model.Event;
@@ -23,8 +23,8 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<EventResponseDto> createEvent(@Valid @RequestBody EventCreateRequestDto requestDto) {
-        Event event = eventService.createEvent(eventMapper.mapFromCreateRequestDtoToEventModel(requestDto));
+    public ResponseEntity<EventResponseDto> createEvent(@Valid @RequestBody EventCreateUpdateRequestDto requestDto) {
+        Event event = eventService.createEvent(eventMapper.mapFromCreateUpdateRequestDtoToEventModel(requestDto));
 
         EventResponseDto response = eventMapper.mapFromEventModelToResponseDto(event);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -41,5 +41,19 @@ public class EventController {
     public ResponseEntity<EventResponseDto> getEventById(@PathVariable Long eventId) {
         Event event = eventService.findEventById(eventId);
         return ResponseEntity.status(HttpStatus.OK).body(eventMapper.mapFromEventModelToResponseDto(event));
+    }
+
+    @PutMapping("/{eventId}")
+    public ResponseEntity<EventResponseDto> updateEventById(
+            @PathVariable Long eventId,
+            @Valid @RequestBody EventCreateUpdateRequestDto requestDto
+    ) {
+        Event event = eventService.updateEventById(
+                eventId,
+                eventMapper.mapFromCreateUpdateRequestDtoToEventModel(requestDto)
+        );
+
+        EventResponseDto response = eventMapper.mapFromEventModelToResponseDto(event);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

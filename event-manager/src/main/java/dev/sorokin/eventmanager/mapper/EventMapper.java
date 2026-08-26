@@ -3,6 +3,8 @@ package dev.sorokin.eventmanager.mapper;
 import dev.sorokin.eventmanager.dto.EventCreateUpdateRequestDto;
 import dev.sorokin.eventmanager.dto.EventResponseDto;
 import dev.sorokin.eventmanager.entity.EventEntity;
+import dev.sorokin.eventmanager.entity.LocationEntity;
+import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import dev.sorokin.eventmanager.model.Event;
 import org.springframework.stereotype.Component;
@@ -50,6 +52,36 @@ public class EventMapper {
                 event.duration(),
                 null,
                 null,
+                event.occupiedPlaces(),
+                event.status()
+        );
+    }
+
+    public EventEntity mapFromEventModelToEventEntity(Event event, UserEntity owner) {
+        return new EventEntity(
+                event.id(),
+                event.name(),
+                event.maxPlaces(),
+                event.date(),
+                event.cost(),
+                event.duration(),
+                null,
+                owner,
+                event.occupiedPlaces(),
+                event.status()
+        );
+    }
+
+    public EventEntity mapFromEventModelToEventEntity(Event event, LocationEntity location, UserEntity owner) {
+        return new EventEntity(
+                event.id(),
+                event.name(),
+                event.maxPlaces(),
+                event.date(),
+                event.cost(),
+                event.duration(),
+                location,
+                owner,
                 event.occupiedPlaces(),
                 event.status()
         );

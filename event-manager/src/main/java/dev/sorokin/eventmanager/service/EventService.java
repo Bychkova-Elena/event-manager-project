@@ -84,7 +84,15 @@ public class EventService {
 
         validateEventToCancel(event, currentUser);
 
-        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event);
+        LocationEntity location = locationMapper.mapLocationModelToLocationEntity(
+                locationService.findLocationById(event.locationId())
+        );
+
+        UserEntity owner = userMapper.mapDomainToEntity(
+                userService.findUserById(event.ownerId())
+        );
+
+        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event, location, owner);
         entity.setStatus(EventStatus.CANCELLED.name());
         eventRepository.save(entity);
 
@@ -105,22 +113,24 @@ public class EventService {
 
         logger.info("Start update event with id: {}", eventId);
 
-        Event event = getEventByIdFromRepository(eventId);
+        Event oldEvent = getEventByIdFromRepository(eventId);
         User currentUser = userService.getCurrentUser();
 
-        validateCurrentUserIsOwnerOrAdmin(event, currentUser);
+        validateCurrentUserIsOwnerOrAdmin(oldEvent, currentUser);
 
-        Location location = locationService.findLocationById(event.locationId());
+        Location newLocation = locationService.findLocationById(eventToUpdate.locationId());
 
-        if (event.occupiedPlaces() > eventToUpdate.maxPlaces()) {
-            logger.error("OccupiedPlaces {} bigger than new event's maxPlaces {}", event.occupiedPlaces(), eventToUpdate.maxPlaces());
-            throw new IllegalArgumentException("Занятых мест - " + event.occupiedPlaces() + " - больше максимального количества мест на мероприятии - " + eventToUpdate.maxPlaces());
+        if (oldEvent.occupiedPlaces() > eventToUpdate.maxPlaces()) {
+            logger.error("OccupiedPlaces {} bigger than new event's maxPlaces {}", oldEvent.occupiedPlaces(), eventToUpdate.maxPlaces());
+            throw new IllegalArgumentException("Занятых мест - " + oldEvent.occupiedPlaces() + " - больше максимального количества мест на мероприятии - " + eventToUpdate.maxPlaces());
         }
 
-        validateEventToCreateUpdate(eventToUpdate, location);
+        validateEventToCreateUpdate(eventToUpdate, newLocation);
 
-        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event);
-        LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(location);
+        UserEntity owner = userMapper.mapDomainToEntity(userService.findUserById(oldEvent.ownerId()));
+
+        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(oldEvent, owner);
+        LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(newLocation);
 
         entity.setName(eventToUpdate.name());
         entity.setMaxPlaces(eventToUpdate.maxPlaces());

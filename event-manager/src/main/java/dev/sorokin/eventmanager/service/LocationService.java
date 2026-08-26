@@ -7,6 +7,7 @@ import dev.sorokin.eventmanager.repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class LocationService {
@@ -32,7 +33,8 @@ public class LocationService {
     }
 
     public Location findLocationById(Long locationId) {
-        LocationEntity locationEntity = locationRepository.findById(locationId).orElseThrow();
+        LocationEntity locationEntity = locationRepository.findById(locationId)
+                .orElseThrow(() -> new NoSuchElementException(String.format("Локация %s не найдена", locationId)));
 
         return locationMapper.mapLocationEntityToLocation(locationEntity);
     }

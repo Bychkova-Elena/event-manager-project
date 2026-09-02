@@ -22,7 +22,7 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired

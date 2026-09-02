@@ -4,7 +4,6 @@ import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.entity.LocationEntity;
 import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
-import dev.sorokin.eventmanager.enums.UserRole;
 import dev.sorokin.eventmanager.mapper.EventMapper;
 import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.mapper.UserMapper;
@@ -12,9 +11,9 @@ import dev.sorokin.eventmanager.model.Event;
 import dev.sorokin.eventmanager.model.Location;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.repository.EventRepository;
+import dev.sorokin.eventmanager.security.annotation.IsOwnerOrAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,10 +61,8 @@ public class EventService {
         validateEventToCreateUpdate(event, location);
 
         UserEntity currentUserEntity = userMapper.mapDomainToEntity(currentUser);
-        EventEntity eventToSave = eventMapper.mapFromEventModelToEventEntity(event);
         LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(location);
-        eventToSave.setLocation(locationEntity);
-        eventToSave.setOwner(currentUserEntity);
+        EventEntity eventToSave = eventMapper.mapFromEventModelToEventEntity(event, locationEntity, currentUserEntity);
 
         EventEntity saved = eventRepository.save(eventToSave);
 
@@ -73,28 +70,18 @@ public class EventService {
         return eventMapper.mapFromEventEntityToEventModel(saved);
     }
 
+    @IsOwnerOrAdmin
     @Transactional
     public void cancelEventById(Long eventId) {
 
         logger.info("Start cancel event: {}", eventId);
 
-        Event event = getEventByIdFromRepository(eventId);
+        EventEntity event = getEventByIdFromRepository(eventId);
 
-        User currentUser = userService.getCurrentUser();
+        validateEventToCancel(event);
 
-        validateEventToCancel(event, currentUser);
-
-        LocationEntity location = locationMapper.mapLocationModelToLocationEntity(
-                locationService.findLocationById(event.locationId())
-        );
-
-        UserEntity owner = userMapper.mapDomainToEntity(
-                userService.findUserById(event.ownerId())
-        );
-
-        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(event, location, owner);
-        entity.setStatus(EventStatus.CANCELLED.name());
-        eventRepository.save(entity);
+        event.setStatus(EventStatus.CANCELLED.name());
+        eventRepository.save(event);
 
         logger.info("Successfully canceled event: {}", eventId);
     }
@@ -102,67 +89,51 @@ public class EventService {
     public Event findEventById(Long eventId) {
 
         logger.info("Start find event with id: {}", eventId);
-        Event event = getEventByIdFromRepository(eventId);
+        EventEntity event = getEventByIdFromRepository(eventId);
         logger.info("Successfully find event: {}", event);
 
-        return event;
+        return eventMapper.mapFromEventEntityToEventModel(event);
     }
 
+    @IsOwnerOrAdmin
     @Transactional
     public Event updateEventById(Long eventId, Event eventToUpdate) {
 
         logger.info("Start update event with id: {}", eventId);
 
-        Event oldEvent = getEventByIdFromRepository(eventId);
-        User currentUser = userService.getCurrentUser();
-
-        validateCurrentUserIsOwnerOrAdmin(oldEvent, currentUser);
+        EventEntity oldEvent = getEventByIdFromRepository(eventId);
 
         Location newLocation = locationService.findLocationById(eventToUpdate.locationId());
 
-        if (oldEvent.occupiedPlaces() > eventToUpdate.maxPlaces()) {
-            logger.error("OccupiedPlaces {} bigger than new event's maxPlaces {}", oldEvent.occupiedPlaces(), eventToUpdate.maxPlaces());
-            throw new IllegalArgumentException("Занятых мест - " + oldEvent.occupiedPlaces() + " - больше максимального количества мест на мероприятии - " + eventToUpdate.maxPlaces());
+        if (oldEvent.getOccupiedPlaces() > eventToUpdate.maxPlaces()) {
+            logger.error("OccupiedPlaces {} bigger than new event's maxPlaces {}", oldEvent.getOccupiedPlaces(), eventToUpdate.maxPlaces());
+            throw new IllegalArgumentException("Занятых мест - " + oldEvent.getOccupiedPlaces() + " - больше максимального количества мест на мероприятии - " + eventToUpdate.maxPlaces());
         }
 
         validateEventToCreateUpdate(eventToUpdate, newLocation);
 
-        UserEntity owner = userMapper.mapDomainToEntity(userService.findUserById(oldEvent.ownerId()));
-
-        EventEntity entity = eventMapper.mapFromEventModelToEventEntity(oldEvent, owner);
         LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(newLocation);
 
-        entity.setName(eventToUpdate.name());
-        entity.setMaxPlaces(eventToUpdate.maxPlaces());
-        entity.setDate(eventToUpdate.date());
-        entity.setCost(eventToUpdate.cost());
-        entity.setDuration(eventToUpdate.duration());
-        entity.setLocation(locationEntity);
+        oldEvent.setName(eventToUpdate.name());
+        oldEvent.setMaxPlaces(eventToUpdate.maxPlaces());
+        oldEvent.setDate(eventToUpdate.date());
+        oldEvent.setCost(eventToUpdate.cost());
+        oldEvent.setDuration(eventToUpdate.duration());
+        oldEvent.setLocation(locationEntity);
 
-        EventEntity saved = eventRepository.save(entity);
+        EventEntity saved = eventRepository.save(oldEvent);
         logger.info("Successfully updated event: {}", saved);
 
         return eventMapper.mapFromEventEntityToEventModel(saved);
     }
 
-    private Event getEventByIdFromRepository(Long eventId) {
-        EventEntity entity = eventRepository
+    private EventEntity getEventByIdFromRepository(Long eventId) {
+        return eventRepository
                 .findById(eventId)
                 .orElseThrow(() -> {
                     logger.error("Not found event with id: {}", eventId);
                     return new NoSuchElementException(String.format("Мероприятие %s не найдено", eventId));
                 });
-
-        return eventMapper.mapFromEventEntityToEventModel(entity);
-    }
-
-    private void validateCurrentUserIsOwnerOrAdmin(Event event, User currentUser) {
-        if (Objects.equals(currentUser.role(), UserRole.USER.name())
-                && !Objects.equals(currentUser.id(), event.ownerId())) {
-
-            logger.error("Current user {} not ADMIN and not owner the event {}", currentUser, event);
-            throw new AccessDeniedException("Текущий пользователь не является админом или оунером мероприятия");
-        }
     }
 
     private void validateEventToCreateUpdate(Event newEvent, Location location) {
@@ -179,11 +150,9 @@ public class EventService {
         }
     }
 
-    private void validateEventToCancel(Event event, User currentUser) {
-        validateCurrentUserIsOwnerOrAdmin(event, currentUser);
-
-        if (!Objects.equals(event.status(), EventStatus.WAIT_START.name())) {
-            logger.error("Event has not status WAIT_START, event's status is {}", event.status());
+    private void validateEventToCancel(EventEntity event) {
+        if (!Objects.equals(event.getStatus(), EventStatus.WAIT_START.name())) {
+            logger.error("Event has not status WAIT_START, event's status is {}", event.getStatus());
             throw new IllegalArgumentException("Мероприятие не в статусе WAIT_START");
         }
     }

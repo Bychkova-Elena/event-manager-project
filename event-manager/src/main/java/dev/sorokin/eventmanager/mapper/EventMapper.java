@@ -42,36 +42,6 @@ public class EventMapper {
         );
     }
 
-    public EventEntity mapFromEventModelToEventEntity(Event event) {
-        return new EventEntity(
-                event.id(),
-                event.name(),
-                event.maxPlaces(),
-                event.date(),
-                event.cost(),
-                event.duration(),
-                null,
-                null,
-                event.occupiedPlaces(),
-                event.status()
-        );
-    }
-
-    public EventEntity mapFromEventModelToEventEntity(Event event, UserEntity owner) {
-        return new EventEntity(
-                event.id(),
-                event.name(),
-                event.maxPlaces(),
-                event.date(),
-                event.cost(),
-                event.duration(),
-                null,
-                owner,
-                event.occupiedPlaces(),
-                event.status()
-        );
-    }
-
     public EventEntity mapFromEventModelToEventEntity(Event event, LocationEntity location, UserEntity owner) {
         return new EventEntity(
                 event.id(),

@@ -2,13 +2,17 @@ package dev.sorokin.eventmanager.controller;
 
 import dev.sorokin.eventmanager.dto.EventCreateUpdateRequestDto;
 import dev.sorokin.eventmanager.dto.EventResponseDto;
+import dev.sorokin.eventmanager.dto.SearchRequestDto;
 import dev.sorokin.eventmanager.mapper.EventMapper;
 import dev.sorokin.eventmanager.model.Event;
+import dev.sorokin.eventmanager.model.SearchFilters;
 import dev.sorokin.eventmanager.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/events")
@@ -55,5 +59,16 @@ public class EventController {
 
         EventResponseDto response = eventMapper.mapFromEventModelToResponseDto(event);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<EventResponseDto>> searchEvents(@RequestBody @Valid SearchRequestDto request) {
+
+        SearchFilters filters = eventMapper.mapSearchRequestDtoToSearchFiltersModel(request);
+        List<Event> events = eventService.searchEvents(filters);
+
+        List<EventResponseDto> responseDtoList = eventMapper.mapFromEventModelListToResponseDtoList(events);
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDtoList);
     }
 }

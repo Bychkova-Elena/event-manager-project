@@ -2,12 +2,16 @@ package dev.sorokin.eventmanager.mapper;
 
 import dev.sorokin.eventmanager.dto.EventCreateUpdateRequestDto;
 import dev.sorokin.eventmanager.dto.EventResponseDto;
+import dev.sorokin.eventmanager.dto.SearchRequestDto;
 import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.entity.LocationEntity;
 import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import dev.sorokin.eventmanager.model.Event;
+import dev.sorokin.eventmanager.model.SearchFilters;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class EventMapper {
@@ -42,6 +46,12 @@ public class EventMapper {
         );
     }
 
+    public List<EventResponseDto> mapFromEventModelListToResponseDtoList(List<Event> events) {
+        return events.stream()
+                .map(this::mapFromEventModelToResponseDto)
+                .toList();
+    }
+
     public EventEntity mapFromEventModelToEventEntity(Event event, LocationEntity location, UserEntity owner) {
         return new EventEntity(
                 event.id(),
@@ -70,5 +80,27 @@ public class EventMapper {
                 entity.getOwner().getId(),
                 entity.getStatus()
         );
+    }
+
+    public SearchFilters mapSearchRequestDtoToSearchFiltersModel(SearchRequestDto dto) {
+        return new SearchFilters(
+                dto.getName(),
+                dto.getPlacesMin(),
+                dto.getPlacesMax(),
+                dto.getDateStartAfter(),
+                dto.getDateStartBefore(),
+                dto.getCostMin(),
+                dto.getCostMax(),
+                dto.getDurationMin(),
+                dto.getDurationMax(),
+                dto.getLocationId(),
+                dto.getEventStatus()
+        );
+    }
+
+    public List<Event> mapFromEventEntityListToEventList(List<EventEntity> entities) {
+        return entities.stream()
+                .map(this::mapFromEventEntityToEventModel)
+                .toList();
     }
 }

@@ -9,6 +9,7 @@ import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.mapper.UserMapper;
 import dev.sorokin.eventmanager.model.Event;
 import dev.sorokin.eventmanager.model.Location;
+import dev.sorokin.eventmanager.model.SearchFilters;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.repository.EventRepository;
 import dev.sorokin.eventmanager.security.annotation.IsOwnerOrAdmin;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -125,6 +127,32 @@ public class EventService {
         logger.info("Successfully updated event: {}", saved);
 
         return eventMapper.mapFromEventEntityToEventModel(saved);
+    }
+
+    public List<Event> searchEvents(SearchFilters filters) {
+        logger.info("Start search events by filters: {}", filters);
+
+        String status = filters.eventStatus() != null ? filters.eventStatus().name() : null;
+
+        List<EventEntity> entities = eventRepository.searchEventEntitiesByFilters(
+                filters.name(),
+                filters.placesMin(),
+                filters.placesMax(),
+                filters.dateStartAfter(),
+                filters.dateStartBefore(),
+                filters.costMin(),
+                filters.costMax(),
+                filters.durationMin(),
+                filters.durationMax(),
+                filters.locationId(),
+                status
+        );
+
+        List<Event> events = eventMapper.mapFromEventEntityListToEventList(entities);
+
+        logger.info("Successfully searched events: {}", events);
+
+        return events;
     }
 
     private EventEntity getEventByIdFromRepository(Long eventId) {

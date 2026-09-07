@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: DDL/create-event-table.yaml
       relativeToChangelogFile: true
+  - include:
+      file: DDL/create-registration-table.yaml
+      relativeToChangelogFile: true

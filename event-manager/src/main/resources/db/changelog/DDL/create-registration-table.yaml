@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/DDL/create-registration-table.yaml
+  - changeSet:
+      id: 'create-registration-table'
+      author: Bychkova Elena
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-registration-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-registration-table.rollback.sql
+            relativeToChangelogFile: true

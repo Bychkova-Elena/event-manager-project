@@ -85,6 +85,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
                         .requestMatchers(HttpMethod.POST, "/events/search").hasAnyAuthority("ADMIN", "USER")
 
+                        .requestMatchers(HttpMethod.POST, "/events/registrations/{eventId}").hasAuthority("USER")
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilterChain, AnonymousAuthenticationFilter.class);
         return http.build();

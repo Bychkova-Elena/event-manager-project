@@ -71,4 +71,13 @@ public class EventController {
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDtoList);
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<EventResponseDto>> getMyEvents() {
+
+        List<Event> events = eventService.getMyEvents();
+        List<EventResponseDto> responseDtoList = eventMapper.mapFromEventModelListToResponseDtoList(events);
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDtoList);
+    }
 }

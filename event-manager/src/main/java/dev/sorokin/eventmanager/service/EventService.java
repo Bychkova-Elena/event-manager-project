@@ -155,6 +155,19 @@ public class EventService {
         return events;
     }
 
+    public List<Event> getMyEvents() {
+
+        logger.info("Start get my events");
+
+        User owner = userService.getCurrentUser();
+        List<EventEntity> entities = eventRepository.getAllByOwner_Id(owner.id());
+        List<Event> events = eventMapper.mapFromEventEntityListToEventList(entities);
+
+        logger.info("Successfully get events: {}", events);
+
+        return events;
+    }
+
     private EventEntity getEventByIdFromRepository(Long eventId) {
         return eventRepository
                 .findById(eventId)

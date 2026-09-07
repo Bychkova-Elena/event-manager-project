@@ -79,6 +79,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/locations/{locationId}").hasAuthority("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/events").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/events/my").hasAuthority("USER")
                         .requestMatchers(HttpMethod.DELETE, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
                         .requestMatchers(HttpMethod.GET, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
                         .requestMatchers(HttpMethod.PUT, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")

@@ -63,6 +63,32 @@ public class EventRegistrationService {
         logger.info("Successfully saved registration on event: {} by user: {}", eventId, userEntity.getId());
     }
 
+    @Transactional
+    public void deleteRegistrationOnEvent(Long eventId) {
+
+        User user = userService.getCurrentUser();
+        UserEntity userEntity = userMapper.mapDomainToEntity(user);
+
+        logger.info("Start cancel {} user's registration on event: {}", userEntity.getId(), eventId);
+
+        EventEntity eventEntity = eventRepository
+                .findByIdWithLock(eventId)
+                .orElseThrow(() -> {
+                    logger.error("Not found event with id: {}", eventId);
+                    return new NoSuchElementException(String.format("Мероприятие %s не найдено", eventId));
+                });
+
+        validateEventToCancel(eventEntity, userEntity.getId());
+
+        RegistrationEntity registration = registrationRepository.findByEvent_IdAndUser_Id(eventId, userEntity.getId());
+        registrationRepository.delete(registration);
+
+        eventEntity.setOccupiedPlaces(eventEntity.getOccupiedPlaces()-1);
+        eventRepository.save(eventEntity);
+
+        logger.info("Successfully cancel registration on event: {} by user: {}", eventId, userEntity.getId());
+    }
+
     private void validateEventToRegister(EventEntity event, Long userId) {
         if (!event.getStatus().equals(EventStatus.WAIT_START.name())) {
             logger.error("Unable to register for the event: {}, the event is not in the WAIT_START status", event.getId());
@@ -79,6 +105,21 @@ public class EventRegistrationService {
         if (registrationRepository.existsByEvent_IdAndUser_Id(event.getId(), userId)) {
             logger.error("You are already registered for event: {}", event.getId());
             throw new IllegalArgumentException("Вы уже зарегистрированы на это мероприятие");
+        }
+    }
+
+    private void validateEventToCancel(EventEntity event, Long userId) {
+        if (event.getStatus().equals(EventStatus.STARTED.name())
+                        || event.getStatus().equals(EventStatus.FINISHED.name())) {
+            logger.error("Unable to cancel registration for the event: {}, the event already started or finished", event.getId());
+            throw new IllegalArgumentException(
+                    "Невозможно зарегистрироваться на мероприятие: мероприятие уже началось или завершилось"
+            );
+        }
+
+        if (!registrationRepository.existsByEvent_IdAndUser_Id(event.getId(), userId)) {
+            logger.error("You are not registered for event: {}", event.getId());
+            throw new IllegalArgumentException("Вы не зарегестрированы на это мероприятие");
         }
     }
 }

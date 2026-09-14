@@ -3,6 +3,8 @@ package dev.sorokin.eventmanager.entity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "event")
 public class EventEntity {
@@ -39,6 +41,9 @@ public class EventEntity {
 
     @Column(name = "status", nullable = false)
     private String status;
+
+    @OneToMany(mappedBy = "event")
+    private List<RegistrationEntity> registrations;
 
     public EventEntity(
             Long id,
@@ -168,5 +173,13 @@ public class EventEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<RegistrationEntity> getRegistrations() {
+        return registrations;
+    }
+
+    public void setRegistrations(List<RegistrationEntity> registrations) {
+        this.registrations = registrations;
     }
 }

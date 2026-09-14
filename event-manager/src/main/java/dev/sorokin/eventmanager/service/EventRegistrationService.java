@@ -5,6 +5,7 @@ import dev.sorokin.eventmanager.entity.RegistrationEntity;
 import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
 import dev.sorokin.eventmanager.mapper.UserMapper;
+import dev.sorokin.eventmanager.model.Event;
 import dev.sorokin.eventmanager.model.User;
 import dev.sorokin.eventmanager.repository.EventRepository;
 import dev.sorokin.eventmanager.repository.RegistrationRepository;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -87,6 +89,20 @@ public class EventRegistrationService {
         eventRepository.save(eventEntity);
 
         logger.info("Successfully cancel registration on event: {} by user: {}", eventId, userEntity.getId());
+    }
+
+    public List<Event> getMyRegistrations() {
+
+        User user = userService.getCurrentUser();
+
+        logger.info("Start getting registrations of user: {}", user.id());
+
+        List<Event> events = registrationRepository.findAllEventsByUserId(user.id());
+
+        logger.info("Successfully get registrations for user: {}", user.id());
+
+        return events;
+
     }
 
     private void validateEventToRegister(EventEntity event, Long userId) {

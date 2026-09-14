@@ -47,4 +47,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM EventEntity e WHERE e.id = :id")
     Optional<EventEntity> findByIdWithLock(@Param("id") Long id);
+
+    boolean existsByLocation_Id(Long locationId);
+
+    List<EventEntity> getAllByLocation_Id(Long locationId);
 }

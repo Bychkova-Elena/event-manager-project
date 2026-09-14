@@ -1,8 +1,10 @@
 package dev.sorokin.eventmanager.service;
 
+import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.entity.LocationEntity;
 import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.model.Location;
+import dev.sorokin.eventmanager.repository.EventRepository;
 import dev.sorokin.eventmanager.repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +16,16 @@ public class LocationService {
 
     private final LocationRepository locationRepository;
     private final LocationMapper locationMapper;
+    private final EventRepository eventRepository;
 
-    public LocationService(LocationRepository locationRepository, LocationMapper locationMapper) {
+    public LocationService(
+            LocationRepository locationRepository,
+            LocationMapper locationMapper,
+            EventRepository eventRepository
+    ) {
         this.locationRepository = locationRepository;
         this.locationMapper = locationMapper;
+        this.eventRepository = eventRepository;
     }
 
     public List<Location> getAllLocations() {
@@ -42,6 +50,10 @@ public class LocationService {
     public void deleteLocationById(Long locationId) {
         LocationEntity locationEntity = locationRepository.findById(locationId).orElseThrow();
 
+        if (eventRepository.existsByLocation_Id(locationId)) {
+            throw new IllegalArgumentException("Невозможно удалить локацию. На локации есть мероприятие");
+        }
+
         locationRepository.delete(locationEntity);
     }
 
@@ -53,6 +65,15 @@ public class LocationService {
             String description
     ) {
         LocationEntity location = locationRepository.findById(locationId).orElseThrow();
+
+        List<EventEntity> events = eventRepository.getAllByLocation_Id(locationId);
+
+        for(EventEntity e : events) {
+            if (e.getMaxPlaces() > capacity) {
+                throw new IllegalArgumentException(String.format("Невозможно поменять локацию. Мероприятия %s имеет maxPlaces %s > нового капасити", e.getId(), e.getMaxPlaces()));
+            }
+        }
+
         location.setName(name);
         location.setAddress(address);
         location.setCapacity(capacity);

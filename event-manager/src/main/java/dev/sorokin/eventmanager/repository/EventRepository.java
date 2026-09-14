@@ -51,4 +51,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long> {
     boolean existsByLocation_Id(Long locationId);
 
     List<EventEntity> getAllByLocation_Id(Long locationId);
+
+    List<EventEntity> getAllByStatusAndDateBefore(String status, String dateBefore);
+
+    List<EventEntity> getAllByStatus(String status);
 }

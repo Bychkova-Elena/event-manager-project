@@ -19,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -32,6 +36,10 @@ public class EventService {
     private final UserService userService;
     private final UserMapper userMapper;
     private final LocationMapper locationMapper;
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+            .withZone(ZoneOffset.UTC);
 
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
@@ -168,6 +176,66 @@ public class EventService {
         return events;
     }
 
+    @Transactional
+    public void setStartedEventStatus() {
+        logger.info("Start setStartedEventStatus");
+
+        String now = OffsetDateTime.now(ZoneOffset.UTC).format(FORMATTER);
+
+        List<EventEntity> events = eventRepository
+                .getAllByStatusAndDateBefore(EventStatus.WAIT_START.name(), now);
+
+        if (events.isEmpty()) {
+            logger.info("No events to move to STARTED");
+            return;
+        }
+
+        logger.info("Found {} events to move from WAIT_START to STARTED", events.size());
+
+        events.forEach(e -> {
+            e.setStatus(EventStatus.STARTED.name());
+            logger.info("Event {} moved to STARTED", e.getId());
+        });
+
+        logger.info("Successfully finished setStartedEventStatus, updated {} events", events.size());
+    }
+
+
+    @Transactional
+    public void setFinishedEventStatus() {
+        logger.info("Start setFinishedEventStatus");
+
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        List<EventEntity> events = eventRepository
+                .getAllByStatus(EventStatus.STARTED.name());
+
+        if (events.isEmpty()) {
+            logger.info("No STARTED events found");
+            return;
+        }
+
+        List<EventEntity> eventsToFinish = events.stream()
+                .filter(e -> OffsetDateTime.parse(e.getDate(), FORMATTER)
+                        .plusMinutes(e.getDuration())
+                        .isBefore(now))
+                .toList();
+
+        if (eventsToFinish.isEmpty()) {
+            logger.info("No events to move to FINISHED");
+            return;
+        }
+
+        logger.info("Found {} events to move from STARTED to FINISHED", eventsToFinish.size());
+
+        eventsToFinish.forEach(e -> {
+            e.setStatus(EventStatus.FINISHED.name());
+            logger.info("Event {} moved to FINISHED", e.getId());
+        });
+
+        logger.info("Successfully finished setFinishedEventStatus, updated {} events", eventsToFinish.size());
+    }
+
     private EventEntity getEventByIdFromRepository(Long eventId) {
         return eventRepository
                 .findById(eventId)
@@ -183,11 +251,22 @@ public class EventService {
             throw new IllegalArgumentException("Вместимость локации - " + location.capacity() + " меньше максимального количества мест на мероприятии - " + newEvent.maxPlaces());
         }
 
-        Instant eventInstant = Instant.parse(newEvent.date());
+        OffsetDateTime eventDateTime = parseAndValidateDate(newEvent.date());
 
-        if (eventInstant.isBefore(Instant.now())) {
+        if (eventDateTime.isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
             logger.error("Event's date in past: {}", newEvent.date());
             throw new IllegalArgumentException("Дата не должна быть в прошлом. Указана: " + newEvent.date());
+        }
+    }
+
+    private OffsetDateTime parseAndValidateDate(String date) {
+        try {
+            return OffsetDateTime.parse(date, FORMATTER);
+        } catch (DateTimeParseException e) {
+            logger.error("Invalid date format: {}", date);
+            throw new IllegalArgumentException(
+                    "Неверный формат даты. Ожидается: yyyy-MM-dd'T'HH:mm:ss.SSSXXX. Получено: " + date
+            );
         }
     }
 

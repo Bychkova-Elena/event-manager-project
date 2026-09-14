@@ -6,6 +6,7 @@ import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.model.Location;
 import dev.sorokin.eventmanager.repository.EventRepository;
 import dev.sorokin.eventmanager.repository.LocationRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,6 +48,7 @@ public class LocationService {
         return locationMapper.mapLocationEntityToLocation(locationEntity);
     }
 
+    @Transactional
     public void deleteLocationById(Long locationId) {
         LocationEntity locationEntity = locationRepository.findById(locationId).orElseThrow();
 
@@ -57,6 +59,7 @@ public class LocationService {
         locationRepository.delete(locationEntity);
     }
 
+    @Transactional
     public Location updateLocationById(
             Long locationId,
             String name,

@@ -22,7 +22,7 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
@@ -77,6 +77,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/locations/{locationId}").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/locations/{locationId}").hasAnyAuthority("ADMIN", "USER")
                         .requestMatchers(HttpMethod.PUT, "/locations/{locationId}").hasAuthority("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/events").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/events/my").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.DELETE, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/events/{eventId}").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.POST, "/events/search").hasAnyAuthority("ADMIN", "USER")
+
+                        .requestMatchers(HttpMethod.POST, "/events/registrations/{eventId}").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.DELETE, "/events/registrations/cancel/{eventId}").hasAuthority("USER")
+                        .requestMatchers(HttpMethod.GET, "/events/registrations/my").hasAuthority("USER")
 
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilterChain, AnonymousAuthenticationFilter.class);

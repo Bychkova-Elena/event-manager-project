@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/DDL/create-event-table.yaml
+  - changeSet:
+      id: 'create-event-table'
+      author: Bychkova Elena
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-event-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-event-table.rollback.sql
+            relativeToChangelogFile: true

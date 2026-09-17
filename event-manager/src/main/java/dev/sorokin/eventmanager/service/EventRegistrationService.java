@@ -106,7 +106,7 @@ public class EventRegistrationService {
     }
 
     private void validateEventToRegister(EventEntity event, Long userId) {
-        if (!event.getStatus().equals(EventStatus.WAIT_START.name())) {
+        if (!EventStatus.WAIT_START.name().equals(event.getStatus())) {
             logger.error("Unable to register for the event: {}, the event is not in the WAIT_START status", event.getId());
             throw new IllegalArgumentException(
                     "Невозможно зарегистрироваться на мероприятие: мероприятие не в статусе WAIT_START"
@@ -125,8 +125,8 @@ public class EventRegistrationService {
     }
 
     private void validateEventToCancel(EventEntity event, Long userId) {
-        if (event.getStatus().equals(EventStatus.STARTED.name())
-                        || event.getStatus().equals(EventStatus.FINISHED.name())) {
+        if (EventStatus.STARTED.name().equals(event.getStatus())
+                        || EventStatus.FINISHED.name().equals(event.getStatus())) {
             logger.error("Unable to cancel registration for the event: {}, the event already started or finished", event.getId());
             throw new IllegalArgumentException(
                     "Невозможно зарегистрироваться на мероприятие: мероприятие уже началось или завершилось"

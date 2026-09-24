@@ -4,15 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.7</version>
-        <relativePath/>
+        <groupId>dev.sorokin</groupId>
+        <artifactId>event-manager-platform</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>dev.sorokin</groupId>
     <artifactId>event-manager</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>event-manager</name>
     <description>Event Manager service</description>
 
@@ -103,6 +100,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.sorokin</groupId>
+            <artifactId>event-common</artifactId>
         </dependency>
     </dependencies>
 

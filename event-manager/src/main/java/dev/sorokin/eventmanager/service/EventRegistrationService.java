@@ -105,6 +105,14 @@ public class EventRegistrationService {
 
     }
 
+    public List<Long> getUserIdsByEventId(Long eventId) {
+        logger.info("Start getting registrations by eventId: {}", eventId);
+        List<RegistrationEntity> registrationEntities = registrationRepository.findAllByEvent_Id(eventId);
+        logger.info("Successfully get registrations by eventId: {}", eventId);
+
+        return registrationEntities.stream().map(reg -> reg.getUser().getId()).distinct().toList();
+    }
+
     private void validateEventToRegister(EventEntity event, Long userId) {
         if (!EventStatus.WAIT_START.name().equals(event.getStatus())) {
             logger.error("Unable to register for the event: {}, the event is not in the WAIT_START status", event.getId());

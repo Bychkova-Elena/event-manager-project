@@ -1,4 +1,5 @@
 package dev.sorokin.eventcommon.kafka;
 
-public class EventChangeKafkaMessage {
+public enum EventType {
+    EVENT_UPDATED
 }

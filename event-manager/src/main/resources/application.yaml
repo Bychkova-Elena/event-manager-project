@@ -20,6 +20,13 @@ spring:
     enabled: true
     change-log: classpath:/db/changelog/changelog-master.yaml
 
+  kafka:
+    bootstrap-servers:
+      - localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.UUIDSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 logging:
   level:
     root: INFO
@@ -29,6 +36,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
     url: /event-manager-openapi.yaml
+
 
 jwt:
   secret-key: yBWwk2rIr1YAWg5QNCydsYWkwtARtR6kIShqlWOpHbE

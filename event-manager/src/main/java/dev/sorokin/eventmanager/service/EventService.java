@@ -1,9 +1,12 @@
 package dev.sorokin.eventmanager.service;
 
+import dev.sorokin.eventcommon.kafka.EventKafkaEvent;
+import dev.sorokin.eventcommon.kafka.EventType;
 import dev.sorokin.eventmanager.entity.EventEntity;
 import dev.sorokin.eventmanager.entity.LocationEntity;
 import dev.sorokin.eventmanager.entity.UserEntity;
 import dev.sorokin.eventmanager.enums.EventStatus;
+import dev.sorokin.eventmanager.kafka.event.EventKafkaEventSender;
 import dev.sorokin.eventmanager.mapper.EventMapper;
 import dev.sorokin.eventmanager.mapper.LocationMapper;
 import dev.sorokin.eventmanager.mapper.UserMapper;
@@ -18,13 +21,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class EventService {
@@ -35,6 +37,8 @@ public class EventService {
     private final UserService userService;
     private final UserMapper userMapper;
     private final LocationMapper locationMapper;
+    private final EventKafkaEventSender eventKafkaEventSender;
+    private final EventRegistrationService eventRegistrationService;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -48,7 +52,9 @@ public class EventService {
             EventMapper eventMapper,
             UserService userService,
             UserMapper userMapper,
-            LocationMapper locationMapper
+            LocationMapper locationMapper,
+            EventKafkaEventSender eventKafkaEventSender,
+            EventRegistrationService eventRegistrationService
     ) {
         this.eventRepository = eventRepository;
         this.locationService = locationService;
@@ -56,6 +62,8 @@ public class EventService {
         this.userService = userService;
         this.userMapper = userMapper;
         this.locationMapper = locationMapper;
+        this.eventKafkaEventSender = eventKafkaEventSender;
+        this.eventRegistrationService = eventRegistrationService;
     }
 
     @Transactional
@@ -85,12 +93,35 @@ public class EventService {
 
         logger.info("Start cancel event: {}", eventId);
 
+        User currentUser = userService.getCurrentUser();
+
         EventEntity event = getEventByIdFromRepository(eventId);
 
         validateEventToCancel(event);
 
         event.setStatus(EventStatus.CANCELLED.name());
         eventRepository.save(event);
+
+        List<Long> subscribers = eventRegistrationService.getUserIdsByEventId(eventId);
+
+        List<EventKafkaEvent.FieldChange> changes = List.of(
+                new EventKafkaEvent.FieldChange(
+                        "status",
+                        EventStatus.WAIT_START.name(),
+                        EventStatus.CANCELLED.name()
+                )
+        );
+
+        eventKafkaEventSender.sendEvent(new EventKafkaEvent(
+                UUID.randomUUID(),
+                EventType.EVENT_UPDATED,
+                eventId,
+                Instant.now(),
+                event.getOwner().getId(),
+                currentUser.id(),
+                subscribers,
+                changes
+        ));
 
         logger.info("Successfully canceled event: {}", eventId);
     }
@@ -110,6 +141,8 @@ public class EventService {
 
         logger.info("Start update event with id: {}", eventId);
 
+        User currentUser = userService.getCurrentUser();
+
         EventEntity oldEvent = getEventByIdFromRepository(eventId);
 
         Location newLocation = locationService.findLocationById(eventToUpdate.locationId());
@@ -123,6 +156,8 @@ public class EventService {
 
         LocationEntity locationEntity = locationMapper.mapLocationModelToLocationEntity(newLocation);
 
+        List<EventKafkaEvent.FieldChange> changes = getChanges(oldEvent, eventToUpdate);
+
         oldEvent.setName(eventToUpdate.name());
         oldEvent.setMaxPlaces(eventToUpdate.maxPlaces());
         oldEvent.setDate(eventToUpdate.date());
@@ -132,6 +167,19 @@ public class EventService {
 
         EventEntity saved = eventRepository.save(oldEvent);
         logger.info("Successfully updated event: {}", saved);
+
+        List<Long> subscribers = eventRegistrationService.getUserIdsByEventId(eventId);
+
+        eventKafkaEventSender.sendEvent(new EventKafkaEvent(
+                UUID.randomUUID(),
+                EventType.EVENT_UPDATED,
+                eventId,
+                Instant.now(),
+                saved.getOwner().getId(),
+                currentUser.id(),
+                subscribers,
+                changes
+        ));
 
         return eventMapper.mapFromEventEntityToEventModel(saved);
     }
@@ -194,6 +242,27 @@ public class EventService {
         events.forEach(e -> {
             e.setStatus(EventStatus.STARTED.name());
             logger.info("Event {} moved to STARTED", e.getId());
+
+            List<Long> subscribers = eventRegistrationService.getUserIdsByEventId(e.getId());
+
+            List<EventKafkaEvent.FieldChange> changes = List.of(
+                    new EventKafkaEvent.FieldChange(
+                            "status",
+                            EventStatus.WAIT_START.name(),
+                            EventStatus.STARTED.name()
+                    )
+            );
+
+            eventKafkaEventSender.sendEvent(new EventKafkaEvent(
+                UUID.randomUUID(),
+                EventType.EVENT_UPDATED,
+                e.getId(),
+                Instant.now(),
+                e.getOwner().getId(),
+                null,
+                subscribers,
+                changes
+            ));
         });
 
         logger.info("Successfully finished setStartedEventStatus, updated {} events", events.size());
@@ -230,10 +299,87 @@ public class EventService {
         eventsToFinish.forEach(e -> {
             e.setStatus(EventStatus.FINISHED.name());
             logger.info("Event {} moved to FINISHED", e.getId());
+
+            List<Long> subscribers = eventRegistrationService.getUserIdsByEventId(e.getId());
+
+            List<EventKafkaEvent.FieldChange> changes = List.of(
+                    new EventKafkaEvent.FieldChange(
+                            "status",
+                            EventStatus.STARTED.name(),
+                            EventStatus.FINISHED.name()
+                    )
+            );
+
+            eventKafkaEventSender.sendEvent(new EventKafkaEvent(
+                    UUID.randomUUID(),
+                    EventType.EVENT_UPDATED,
+                    e.getId(),
+                    Instant.now(),
+                    e.getOwner().getId(),
+                    null,
+                    subscribers,
+                    changes
+            ));
         });
 
         logger.info("Successfully finished setFinishedEventStatus, updated {} events", eventsToFinish.size());
     }
+
+    private List<EventKafkaEvent.FieldChange> getChanges(EventEntity oldEvent, Event eventToUpdate) {
+        List<EventKafkaEvent.FieldChange> changes = new ArrayList<>();
+
+        if (!Objects.equals(oldEvent.getName(), eventToUpdate.name())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "name",
+                    oldEvent.getName(),
+                    eventToUpdate.name()
+            ));
+        }
+
+        if (!Objects.equals(oldEvent.getMaxPlaces(), eventToUpdate.maxPlaces())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "maxPlaces",
+                    String.valueOf(oldEvent.getMaxPlaces()),
+                    String.valueOf(eventToUpdate.maxPlaces())
+            ));
+        }
+
+        if (!Objects.equals(oldEvent.getDate(), eventToUpdate.date())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "date",
+                    oldEvent.getDate() != null ? oldEvent.getDate() : null,
+                    eventToUpdate.date() != null ? eventToUpdate.date() : null
+            ));
+        }
+
+        if (!Objects.equals(oldEvent.getCost(), eventToUpdate.cost())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "cost",
+                    String.valueOf(oldEvent.getCost()),
+                    String.valueOf(eventToUpdate.cost())
+            ));
+        }
+
+        if (!Objects.equals(oldEvent.getDuration(), eventToUpdate.duration())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "duration",
+                    String.valueOf(oldEvent.getDuration()),
+                    String.valueOf(eventToUpdate.duration())
+            ));
+        }
+
+        Long oldLocationId = oldEvent.getLocation() != null ? oldEvent.getLocation().getId() : null;
+        if (!Objects.equals(oldLocationId, eventToUpdate.locationId())) {
+            changes.add(new EventKafkaEvent.FieldChange(
+                    "locationId",
+                    String.valueOf(oldLocationId),
+                    String.valueOf(eventToUpdate.locationId())
+            ));
+        }
+
+        return changes;
+    }
+
 
     private EventEntity getEventByIdFromRepository(Long eventId) {
         return eventRepository

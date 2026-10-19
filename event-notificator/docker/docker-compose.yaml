@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: event-notificator-postgres
+    environment:
+      POSTGRES_DB: event_notificator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d event_notificator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - event_notificator_pg_data:/var/lib/postgresql/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: event-notificator-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: event-notificator-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+
+  redis:
+    image: redis:7
+    container_name: event-notificator-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - event_notificator_redis_data:/data
+
+volumes:
+  event_notificator_pg_data:
+  event_notificator_redis_data:

@@ -1,0 +1,39 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: event-notificator
+
+  datasource:
+    url: jdbc:postgresql://localhost:5436/event_notificator
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/changelog-master.yaml
+
+  kafka:
+    bootstrap-servers:
+      - localhost:9092
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/index.html
+    url: /event-notificator-openapi.yaml
+
+jwt:
+  secret-key: yBWwk2rIr1YAWg5QNCydsYWkwtARtR6kIShqlWOpHbE
+  expiration-time: 86400000

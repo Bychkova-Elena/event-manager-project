@@ -1,3 +1,5 @@
+name: event-manager
+
 services:
   postgres:
     image: postgres:16

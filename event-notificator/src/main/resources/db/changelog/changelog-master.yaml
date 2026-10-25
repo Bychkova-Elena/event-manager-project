@@ -1,2 +1,7 @@
 databaseChangeLog:
-  -
+  - include:
+      file: DDL/create-notification-event-payloads-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: DDL/create-notifications-table.yaml
+      relativeToChangelogFile: true

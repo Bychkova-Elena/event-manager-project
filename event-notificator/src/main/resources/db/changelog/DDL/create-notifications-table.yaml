@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/DDL/create-notifications-table.yaml
+  - changeSet:
+      id: 'create-notifications-table'
+      author: Bychkova Elena
+      changes:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-notifications-table.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sqlFile:
+            dbms: postgresql
+            path: SQL/create-notifications-table.rollback.sql
+            relativeToChangelogFile: true

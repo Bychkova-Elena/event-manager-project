@@ -36,4 +36,3 @@ springdoc:
 
 jwt:
   secret-key: yBWwk2rIr1YAWg5QNCydsYWkwtARtR6kIShqlWOpHbE
-  expiration-time: 86400000

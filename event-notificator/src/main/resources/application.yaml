@@ -24,6 +24,13 @@ spring:
     bootstrap-servers:
       - localhost:9093
 
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+  cache:
+    type: redis
+
 logging:
   level:
     root: INFO

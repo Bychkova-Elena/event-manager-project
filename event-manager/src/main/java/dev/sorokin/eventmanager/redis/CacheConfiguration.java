@@ -1,4 +1,4 @@
-package dev.sorokin.eventmanager.config;
+package dev.sorokin.eventmanager.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sorokin.eventmanager.model.Event;

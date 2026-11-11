@@ -6,22 +6,27 @@ import dev.sorokin.eventmanager.dto.SearchRequestDto;
 import dev.sorokin.eventmanager.mapper.EventMapper;
 import dev.sorokin.eventmanager.model.Event;
 import dev.sorokin.eventmanager.model.SearchFilters;
+import dev.sorokin.eventmanager.redis.RedisLockManager;
 import dev.sorokin.eventmanager.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.util.List;
 
 @RestController
 @RequestMapping("/events")
 public class EventController {
 
+    private final RedisLockManager lockManager;
     private final EventService eventService;
     private final EventMapper eventMapper;
 
-    public EventController(EventService eventService, EventMapper eventMapper) {
+    public EventController(RedisLockManager lockManager, EventService eventService, EventMapper eventMapper) {
+        this.lockManager = lockManager;
         this.eventService = eventService;
         this.eventMapper = eventMapper;
     }
@@ -52,13 +57,29 @@ public class EventController {
             @PathVariable Long eventId,
             @Valid @RequestBody EventCreateUpdateRequestDto requestDto
     ) {
-        Event event = eventService.updateEventById(
-                eventId,
-                eventMapper.mapFromCreateUpdateRequestDtoToEventModel(requestDto)
-        );
+        String lockKey = "event " + eventId;
+        String token = lockManager.tryLock(lockKey, Duration.ofMinutes(5));
 
-        EventResponseDto response = eventMapper.mapFromEventModelToResponseDto(event);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        if (token == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.LOCKED,
+                    "Блокировка захвачена для объекта %s. Попробуйте позже".formatted(lockKey)
+            );
+        }
+
+        try {
+            Thread.sleep(5000);
+            Event event = eventService.updateEventById(
+                    eventId,
+                    eventMapper.mapFromCreateUpdateRequestDtoToEventModel(requestDto)
+            );
+            EventResponseDto response = eventMapper.mapFromEventModelToResponseDto(event);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            lockManager.unlockLock(lockKey, token);
+        }
     }
 
     @PostMapping("/search")

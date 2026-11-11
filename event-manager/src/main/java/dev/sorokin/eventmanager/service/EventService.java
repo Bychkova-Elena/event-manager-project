@@ -18,6 +18,8 @@ import dev.sorokin.eventmanager.repository.EventRepository;
 import dev.sorokin.eventmanager.security.annotation.IsOwnerOrAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,6 +89,10 @@ public class EventService {
         return eventMapper.mapFromEventEntityToEventModel(saved);
     }
 
+    @CacheEvict(
+            value = "event",
+            key = "#eventId"
+    )
     @IsOwnerOrAdmin
     @Transactional
     public void cancelEventById(Long eventId) {
@@ -126,6 +132,10 @@ public class EventService {
         logger.info("Successfully canceled event: {}", eventId);
     }
 
+    @Cacheable(
+            value = "event",
+            key = "#eventId"
+    )
     public Event findEventById(Long eventId) {
 
         logger.info("Start find event with id: {}", eventId);
@@ -135,6 +145,10 @@ public class EventService {
         return eventMapper.mapFromEventEntityToEventModel(event);
     }
 
+    @CacheEvict(
+            value = "event",
+            key = "#eventId"
+    )
     @IsOwnerOrAdmin
     @Transactional
     public Event updateEventById(Long eventId, Event eventToUpdate) {

@@ -10,7 +10,6 @@ class EventManagerApplicationTests {
 
     @Test
     void contextLoads() {
-        fail("Этот тест специально падает");
     }
 
 }

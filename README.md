@@ -9,6 +9,7 @@
 ## Что есть в репозитории
 
 - `event-manager/` — стартовый модуль сервиса на Spring Boot.
+- `event-notificator/` — модуль для нотификаций на Spring Boot.
 - `infra/` — compose-файлы для локального подъема PostgreSQL, Kafka и Redis.
 - `docs/openapi/event-manager-openapi.yaml` — контракт API сервиса `event-manager`.
 - `event-notificator/src/main/resources/static/event-notificator-openapi.yaml` — контракт API сервиса `event-notificator`.
